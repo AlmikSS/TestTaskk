@@ -4,44 +4,55 @@ using UnityEngine.UI;
 
 public class Player : MonoBehaviour
 {
-    [SerializeField] private Image _progressSlider;
-    [SerializeField] private float _sliderSpeed;
+    [Header("Progress Settings")]
+    [SerializeField] private Image progressSlider;
+    [SerializeField] private float sliderSpeed;
     
-    [SerializeField] private float _maxProgress;
-    [SerializeField] private Color _firstProgressColor;
-    [SerializeField] private GameObject _firstProgressModel;
-    [SerializeField] private float _firstProgress;
+    [Header("Progress Levels")]
+    [SerializeField] private float maxProgress;
+    [SerializeField] private Color firstProgressColor;
+    [SerializeField] private GameObject firstProgressModel;
+    [SerializeField] private float firstProgress;
     
-    [SerializeField] private Color _secondProgressColor;
-    [SerializeField] private GameObject _secondProgressModel;
-    [SerializeField] private float _secondProgress;
+    [SerializeField] private Color secondProgressColor;
+    [SerializeField] private GameObject secondProgressModel;
+    [SerializeField] private float secondProgress;
     
-    [SerializeField] private Color _thirdProgressColor;
-    [SerializeField] private float _thirdProgress;
-    [SerializeField] private GameObject _thirdProgressModel;
+    [SerializeField] private Color thirdProgressColor;
+    [SerializeField] private float thirdProgress;
+    [SerializeField] private GameObject thirdProgressModel;
     
-    [SerializeField] private float _addProgressCount;
-    [SerializeField] private float _removeProgressCount;
+    [Header("Progress Modifiers")]
+    [SerializeField] private float addProgressCount;
+    [SerializeField] private float removeProgressCount;
 
-    private float _progress;
-    private int _state;
+    [Header("Effects")]
+    [SerializeField] private GameObject addProgressEffect;
+    [SerializeField] private GameObject removeProgressEffect;
+    
+    private float progress;
+    private int state;
 
-    public float Progress => _progress;
-    public int State => _state;
+    public float Progress => progress;
+    public int State => state;
+
+    private void Awake()
+    {
+        progressSlider.transform.parent.gameObject.SetActive(false);
+    }
 
     private void Start()
     {
-        _progress = _firstProgress;
+        progress = firstProgress;
         UpdateSlider();
-        _progressSlider.transform.parent.gameObject.SetActive(false);
     }
 
     public void StartGame()
     {
-        _progressSlider.transform.parent.gameObject.SetActive(true);
+        progressSlider.transform.parent.gameObject.SetActive(true);
     }
 
-    public void Stop()
+    public void StopGame()
     {
         GetComponent<PlayerController>().StopGame();
     }
@@ -50,16 +61,20 @@ public class Player : MonoBehaviour
     {
         if (other.gameObject.CompareTag("Money"))
         {
-            if (_progress < _maxProgress)
-                _progress += _addProgressCount;
+            if (progress < maxProgress)
+                progress += addProgressCount;
             Destroy(other.gameObject);
+            var obj = Instantiate(addProgressEffect, transform);
+            Destroy(obj, 3);
             UpdateSlider();
         }
 
         if (other.gameObject.CompareTag("Bottle"))
         {
-            _progress -= _removeProgressCount;
+            progress -= removeProgressCount;
             Destroy(other.gameObject);
+            var obj = Instantiate(removeProgressEffect, transform);
+            Destroy(obj, 3);
             UpdateSlider();
         }
 
@@ -68,7 +83,7 @@ public class Player : MonoBehaviour
             GameManager.Instance.Win(4);
         }
         
-        if (_progress <= 0)
+        if (progress <= 0)
             Lose();
     }
 
@@ -79,51 +94,54 @@ public class Player : MonoBehaviour
     
     private void UpdateSlider()
     {
-        //StartCoroutine(UpdateSliderRoutine());
-
-        var progress = _progress / 100f;
-        _progressSlider.fillAmount = progress;
-
-        if (_progress <= _secondProgress)
-        {
-            _state = 1;
-            _progressSlider.color = _firstProgressColor;
-            if (!_firstProgressModel.activeSelf)
-                _firstProgressModel.SetActive(true);
-            _secondProgressModel.SetActive(false);
-            _thirdProgressModel.SetActive(false);
-        }
-        else if (_progress <= _thirdProgress)
-        {
-            _state = 2;
-            _progressSlider.color = _secondProgressColor;
-            _firstProgressModel.SetActive(false);
-            if (!_secondProgressModel.activeSelf)
-                _secondProgressModel.SetActive(true);
-            _thirdProgressModel.SetActive(false);
-        }
-        else if (_progress > _thirdProgress)
-        {
-            _state = 3;
-            _progressSlider.color = _thirdProgressColor;
-            _firstProgressModel.SetActive(false);
-            _secondProgressModel.SetActive(false);
-            if (!_thirdProgressModel.activeSelf)
-                _thirdProgressModel.SetActive(true);
-        }
-        
-        if (GetComponent<PlayerController>().IsGameStarted)
-            GetComponentInChildren<Animator>().SetBool("IsGameStart", true);
+        StartCoroutine(UpdateSliderRoutine());
     }
 
     private IEnumerator UpdateSliderRoutine()
     {
-        var targetFillAmount = _progress / 100f;
+        float targetFillAmount = progress / 100f;
+        float initialFillAmount = progressSlider.fillAmount;
+        float elapsedTime = 0f;
+        float duration = 0.5f; 
 
-        while (!Mathf.Approximately(_progressSlider.fillAmount, targetFillAmount))
+        while (elapsedTime < duration)
         {
-            _progressSlider.fillAmount = Mathf.MoveTowards(_progressSlider.fillAmount, targetFillAmount, _sliderSpeed * Time.deltaTime);
+            elapsedTime += Time.deltaTime;
+            progressSlider.fillAmount = Mathf.Lerp(initialFillAmount, targetFillAmount, elapsedTime / duration);
             yield return null;
         }
+
+        progressSlider.fillAmount = targetFillAmount;
+
+        if (progress <= secondProgress)
+        {
+            state = 1;
+            progressSlider.color = firstProgressColor;
+            if (!firstProgressModel.activeSelf)
+                firstProgressModel.SetActive(true);
+            secondProgressModel.SetActive(false);
+            thirdProgressModel.SetActive(false);
+        }
+        else if (progress <= thirdProgress)
+        {
+            state = 2;
+            progressSlider.color = secondProgressColor;
+            firstProgressModel.SetActive(false);
+            if (!secondProgressModel.activeSelf)
+                secondProgressModel.SetActive(true);
+            thirdProgressModel.SetActive(false);
+        }
+        else if (progress > thirdProgress)
+        {
+            state = 3;
+            progressSlider.color = thirdProgressColor;
+            firstProgressModel.SetActive(false);
+            secondProgressModel.SetActive(false);
+            if (!thirdProgressModel.activeSelf)
+                thirdProgressModel.SetActive(true);
+        }
+
+        if (GetComponent<PlayerController>().IsGameStarted)
+            GetComponentInChildren<Animator>().SetBool("IsGameStart", true);
     }
 }

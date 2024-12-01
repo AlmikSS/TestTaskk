@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -6,18 +6,21 @@ using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
-    [SerializeField] private PlayerController _playerController;
-    [SerializeField] private Player _player;
-    [SerializeField] private Image _fadeInEffect;
-    [SerializeField] private TMP_Text _coinsText;
-    [SerializeField] private GameObject _tutUIGameObject;
-    [SerializeField] private GameObject _winUIGameObject;
-    [SerializeField] private GameObject _loseUIGameObject;
+    [Header("Player Settings")]
+    [SerializeField] private PlayerController playerController;
+    [SerializeField] private Player player;
+
+    [Header("UI Elements")]
+    [SerializeField] private Image fadeInEffect;
+    [SerializeField] private TMP_Text coinsText;
+    [SerializeField] private GameObject tutorialUI;
+    [SerializeField] private GameObject winUI;
+    [SerializeField] private GameObject loseUI;
     
     public static GameManager Instance { get; private set; }
     
-    private bool _isGameStart;
-    private static int _coins;
+    private bool isGameStart;
+    private static int coins;
     
     private void Awake()
     {
@@ -27,40 +30,37 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
 
         StartCoroutine(FadeOnRoutine());
-        _coinsText.text = _coins.ToString();
+        coinsText.text = coins.ToString();
     }
 
     private void StartGame()
     {
-        _playerController.StartGame();
-        _player.StartGame();
-        _tutUIGameObject.SetActive(false);
+        playerController.StartGame();
+        player.StartGame();
+        tutorialUI.SetActive(false);
     }
 
     private void Update()
     {
-        if (!_isGameStart)
+        if (!isGameStart && Input.GetMouseButtonDown(0))
         {
-            if (Input.GetMouseButtonDown(0))
-            {
-                _isGameStart = true;
-                StartGame();
-            }
+            isGameStart = true;
+            StartGame();
         }
     }
     
     public void Win(int state)
     {
-        _winUIGameObject.SetActive(true);
-        _playerController.StopGame();
-        _coins += Mathf.RoundToInt(_player.Progress);
-        _coinsText.text = _coins.ToString();
+        winUI.SetActive(true);
+        playerController.StopGame();
+        coins += Mathf.RoundToInt(player.Progress * state);
+        coinsText.text = coins.ToString();
     }
     
     public void Lose()
     {
-        _loseUIGameObject.SetActive(true);
-        _playerController.StopGame();
+        loseUI.SetActive(true);
+        playerController.StopGame();
     }
 
     public void Restart()
@@ -70,9 +70,9 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator FadeInRoutine(int sceneId)
     {
-        while (_fadeInEffect.color.a < 1)
+        while (fadeInEffect.color.a < 1)
         {
-            _fadeInEffect.color = new Color(0, 0, 0, _fadeInEffect.color.a + 0.05f);
+            fadeInEffect.color = new Color(0, 0, 0, fadeInEffect.color.a + 0.05f);
             yield return null;
         }
         
@@ -81,9 +81,9 @@ public class GameManager : MonoBehaviour
     
     private IEnumerator FadeOnRoutine()
     {
-        while (_fadeInEffect.color.a > 0)
+        while (fadeInEffect.color.a > 0)
         {
-            _fadeInEffect.color = new Color(0, 0, 0, _fadeInEffect.color.a - 0.05f);
+            fadeInEffect.color = new Color(0, 0, 0, fadeInEffect.color.a - 0.05f);
             yield return null;
         }
     }
